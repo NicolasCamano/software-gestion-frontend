@@ -1,16 +1,12 @@
-// frontend/src/context/AuthContext.js
-
 import React, { createContext, useState, useContext } from 'react';
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from 'react-router-dom';
-import axiosInstance from '../utils/axiosInstance'; // Importamos axiosInstance
+import axiosInstance from '../utils/axiosInstance';
 
 const AuthContext = createContext();
 export default AuthContext;
 
-export const useAuth = () => {
-    return useContext(AuthContext);
-};
+export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
     const [authTokens, setAuthTokens] = useState(() => localStorage.getItem('authTokens') ? JSON.parse(localStorage.getItem('authTokens')) : null);
@@ -21,15 +17,13 @@ export const AuthProvider = ({ children }) => {
         e.preventDefault();
         try {
             // --- ¡LA CORRECCIÓN ESTÁ AQUÍ! ---
-            // Usamos axiosInstance. La URL ahora es relativa ('/token/') porque
-            // axiosInstance ya conoce la parte principal de la dirección.
-            const response = await axiosInstance.post('/token/', { 
+            // Ahora llamamos a la ruta completa desde la raíz de la API.
+            const response = await axiosInstance.post('/api/token/', { 
                 username: e.target.username.value, 
                 password: e.target.password.value 
             });
             
             const data = response.data;
-
             if (response.status === 200) {
                 setAuthTokens(data);
                 setUser(jwtDecode(data.access));
@@ -39,8 +33,7 @@ export const AuthProvider = ({ children }) => {
                 alert('Usuario o contraseña incorrectos.');
             }
         } catch (error) {
-            console.error("Error de login:", error);
-            alert('Hubo un problema al intentar iniciar sesión. Revisa las credenciales.');
+            alert('Hubo un problema al intentar iniciar sesión.');
         }
     };
 
