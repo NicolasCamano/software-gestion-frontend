@@ -1,3 +1,5 @@
+// frontend/src/context/AuthContext.js
+
 import React, { createContext, useState, useContext } from 'react';
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from 'react-router-dom';
@@ -17,8 +19,8 @@ export const AuthProvider = ({ children }) => {
         e.preventDefault();
         try {
             // --- ¡LA CORRECCIÓN ESTÁ AQUÍ! ---
-            // Ahora llamamos a la ruta completa desde la raíz de la API.
-            const response = await axiosInstance.post('/api/token/', { 
+            // Llamamos a la ruta RELATIVA. Axios añadirá la baseURL '.../api/v1' automáticamente.
+            const response = await axiosInstance.post('/token/', { 
                 username: e.target.username.value, 
                 password: e.target.password.value 
             });
@@ -49,13 +51,8 @@ export const AuthProvider = ({ children }) => {
     const esRepositor = user?.groups?.includes('Repositor') ?? false;
 
     const contextData = {
-        user,
-        authTokens,
-        loginUser,
-        logoutUser,
-        esAdmin,
-        esTecnico,
-        esRepositor
+        user, authTokens, loginUser, logoutUser,
+        esAdmin, esTecnico, esRepositor
     };
 
     return (

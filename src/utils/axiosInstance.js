@@ -4,42 +4,31 @@ import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 import dayjs from 'dayjs';
 
-// --- ¡LA BASEURL DEFINITIVA! ---
-// Ahora apunta a la raíz de nuestra API, '/api/v1'.
+// La baseURL es la raíz de TODA nuestra API.
 const baseURL = 'https://arcade-api-i5r3.onrender.com/api/v1';
-
-// Creamos una instancia separada para el refresh token, para evitar bucles.
-const axiosRefresh = axios.create({ baseURL });
 
 const axiosInstance = axios.create({
     baseURL
 });
 
+// El interceptor se encarga de renovar los tokens automáticamente
 axiosInstance.interceptors.request.use(async req => {
     const authTokens = localStorage.getItem('authTokens') ? JSON.parse(localStorage.getItem('authTokens')) : null;
     if (!authTokens) return req;
 
     const user = jwtDecode(authTokens.access);
-    const isExpired = dayjs.unix(user.exp).diff(dayjs()) < 5; // Refresca 5 segundos antes de expirar
-
+    const isExpired = dayjs.unix(user.exp).diff(dayjs()) < 1;
     if (!isExpired) {
         req.headers.Authorization = `Bearer ${authTokens.access}`;
         return req;
     }
 
-    try {
-        const response = await axiosRefresh.post('/token/refresh/', {
-            refresh: authTokens.refresh
-        });
-        localStorage.setItem('authTokens', JSON.stringify(response.data));
-        req.headers.Authorization = `Bearer ${response.data.access}`;
-        return req;
-    } catch (error) {
-        // Si el refresh token falla, deslogueamos al usuario (esto se manejaría en AuthContext)
-        console.error("Refresh token failed", error);
-        // Aquí podrías llamar a una función de logout global.
-    }
-    
+    // Usamos una URL completa para el refresh para evitar problemas con el interceptor
+    const response = await axios.post('https://arcade-api-i5r3.onrender.com/api/v1/token/refresh/', {
+        refresh: authTokens.refresh
+    });
+    localStorage.setItem('authTokens', JSON.stringify(response.data));
+    req.headers.Authorization = `Bearer ${response.data.access}`;
     return req;
 });
 
