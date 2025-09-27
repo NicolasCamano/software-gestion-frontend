@@ -1,9 +1,9 @@
 // frontend/src/components/LoginPage.js
 
-import React, { useContext, useState } from 'react'; // --- NUEVO: importamos useState ---
+import React, { useContext, useState } from 'react';
 import AuthContext from '../context/AuthContext';
 
-// --- NUEVO: Importamos componentes de MUI para el icono ---
+// Importamos los componentes de MUI que usaremos
 import { Container, Box, TextField, Button, Typography, Paper, InputAdornment, IconButton } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -11,11 +11,8 @@ import GamesIcon from '@mui/icons-material/Games';
 
 const LoginPage = () => {
     const { loginUser } = useContext(AuthContext);
-
-    // --- NUEVO: Estado para controlar la visibilidad de la contraseña ---
     const [showPassword, setShowPassword] = useState(false);
 
-    // --- NUEVO: Funciones para manejar el clic en el icono ---
     const handleClickShowPassword = () => setShowPassword((show) => !show);
     const handleMouseDownPassword = (event) => {
         event.preventDefault();
@@ -39,7 +36,7 @@ const LoginPage = () => {
                 <Paper elevation={6} sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <GamesIcon sx={{ fontSize: 40, mb: 1 }} />
                     <Typography component="h1" variant="h5">
-                        Machine Control Center
+                        Arcade Control Center
                     </Typography>
                     <Box component="form" onSubmit={loginUser} noValidate sx={{ mt: 1 }}>
                         <TextField
@@ -57,10 +54,10 @@ const LoginPage = () => {
                             fullWidth
                             name="password"
                             label="Contraseña"
-                            // --- NUEVO: El tipo de campo ahora depende de nuestro estado ---
                             type={showPassword ? 'text' : 'password'}
                             id="password"
-                            // --- NUEVO: Añadimos el adorno del icono al final del campo ---
+                            // --- ¡LA CORRECCIÓN ESTÁ AQUÍ! ---
+                            // Usamos 'InputProps' (con 'I' mayúscula) para modificar el contenedor del input.
                             InputProps={{
                                 endAdornment: (
                                     <InputAdornment position="end">
