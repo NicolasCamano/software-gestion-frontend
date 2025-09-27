@@ -15,8 +15,6 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(() => localStorage.getItem('authTokens') ? jwtDecode(JSON.parse(localStorage.getItem('authTokens')).access) : null);
     const navigate = useNavigate();
 
-   // Dentro de AuthProvider en AuthContext.js
-
     const loginUser = async (e) => {
         e.preventDefault();
         try {
@@ -31,32 +29,25 @@ export const AuthProvider = ({ children }) => {
                 setUser(jwtDecode(data.access));
                 localStorage.setItem('authTokens', JSON.stringify(data));
                 navigate('/');
-            } else {
-                // Esto es poco probable que se ejecute con Axios, pero es una buena práctica
-                alert(`Error inesperado: ${response.status}`);
             }
         } catch (error) {
             console.error("Error detallado de login:", error);
-            let errorMessage = "Ocurrió un error inesperado al intentar iniciar sesión.";
-            
-            // Analizamos el tipo de error que nos da Axios
+            let errorMessage = "Ocurrió un error inesperado.";
             if (error.response) {
-                // El servidor respondió con un código de error (4xx o 5xx)
-                errorMessage = `Error del servidor: ${error.response.status}. `;
-                if (error.response.data?.detail) {
-                    errorMessage += `Detalle: ${error.response.data.detail}`;
-                } else {
-                    errorMessage += `Respuesta: ${JSON.stringify(error.response.data)}`;
-                }
+                errorMessage = `Error del servidor: ${error.response.status}. Revisa tus credenciales.`;
             } else if (error.request) {
-                // La petición se hizo pero no se recibió respuesta (CORS, red, etc.)
-                errorMessage = "No se pudo conectar con el servidor. Verifica que el back-end esté funcionando y la configuración de CORS sea correcta.";
-            } else {
-                // Ocurrió un error al configurar la petición
-                errorMessage = `Error de configuración en el front-end: ${error.message}`;
+                errorMessage = "No se pudo conectar con el servidor. Revisa la configuración de CORS y la URL de la API.";
             }
-            alert(errorMessage); // Mostramos el mensaje de error detallado
+            alert(errorMessage);
         }
+    };
+
+    // --- ¡LA FUNCIÓN QUE FALTABA ESTÁ AQUÍ! ---
+    const logoutUser = () => {
+        setAuthTokens(null);
+        setUser(null);
+        localStorage.removeItem('authTokens');
+        navigate('/login');
     };
 
     const esAdmin = user?.groups?.includes('Administrador') ?? false;
@@ -64,8 +55,13 @@ export const AuthProvider = ({ children }) => {
     const esRepositor = user?.groups?.includes('Repositor') ?? false;
 
     const contextData = {
-        user, authTokens, loginUser, logoutUser,
-        esAdmin, esTecnico, esRepositor
+        user,
+        authTokens,
+        loginUser,
+        logoutUser, // Ahora 'logoutUser' está definido y se puede usar aquí
+        esAdmin,
+        esTecnico,
+        esRepositor
     };
 
     return (
