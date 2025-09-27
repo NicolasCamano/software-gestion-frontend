@@ -22,9 +22,17 @@ function HomePage() {
             });
     };
     
-    useEffect(() => {
-        fetchData();
-    }, []);
+useEffect(() => {
+    // La llamada es a '/salas/', NO a '/api/v1/salas/'.
+    axiosInstance.get('/salas/') 
+        .then(res => {
+            setSalas(res.data.results || res.data);
+        })
+        .catch(error => {
+            console.error("Error al cargar las salas:", error);
+            setSalas([]);
+        });
+}, []);
 
     // Cuando se crea una sala, la añadimos a la lista para que se vea al instante
     const handleSalaCreated = (nuevaSala) => {
