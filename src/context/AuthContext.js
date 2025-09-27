@@ -1,8 +1,9 @@
 // frontend/src/context/AuthContext.js
 
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useContext } from 'react';
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from 'react-router-dom';
+import axiosInstance from '../utils/axiosInstance'; // Importamos axiosInstance
 
 const AuthContext = createContext();
 export default AuthContext;
@@ -14,35 +15,32 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
     const [authTokens, setAuthTokens] = useState(() => localStorage.getItem('authTokens') ? JSON.parse(localStorage.getItem('authTokens')) : null);
     const [user, setUser] = useState(() => localStorage.getItem('authTokens') ? jwtDecode(JSON.parse(localStorage.getItem('authTokens')).access) : null);
-    
     const navigate = useNavigate();
 
     const loginUser = async (e) => {
         e.preventDefault();
-        try { 
-            const response = await fetch('http://127.0.0.1:8000/api/token/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 'username': e.target.username.value, 'password': e.target.password.value })
+        try {
+            // --- ¡LA CORRECCIÓN ESTÁ AQUÍ! ---
+            // Usamos axiosInstance. La URL ahora es relativa ('/token/') porque
+            // axiosInstance ya conoce la parte principal de la dirección.
+            const response = await axiosInstance.post('/token/', { 
+                username: e.target.username.value, 
+                password: e.target.password.value 
             });
-            const data = await response.json();
+            
+            const data = response.data;
 
             if (response.status === 200) {
                 setAuthTokens(data);
-                const decodedUser = jwtDecode(data.access);
-                setUser(decodedUser);
+                setUser(jwtDecode(data.access));
                 localStorage.setItem('authTokens', JSON.stringify(data));
-                
-                // --- MENSAJE ESPÍA 1 ---
-                console.log("LOGIN EXITOSO. Usuario decodificado:", decodedUser);
-
                 navigate('/');
             } else {
                 alert('Usuario o contraseña incorrectos.');
             }
         } catch (error) {
             console.error("Error de login:", error);
-            alert('Hubo un problema al intentar iniciar sesión.');
+            alert('Hubo un problema al intentar iniciar sesión. Revisa las credenciales.');
         }
     };
 
@@ -58,18 +56,14 @@ export const AuthProvider = ({ children }) => {
     const esRepositor = user?.groups?.includes('Repositor') ?? false;
 
     const contextData = {
-        user: user,
-        authTokens: authTokens,
-        loginUser: loginUser,
-        logoutUser: logoutUser,
+        user,
+        authTokens,
+        loginUser,
+        logoutUser,
         esAdmin,
         esTecnico,
         esRepositor
     };
-    
-    // --- MENSAJE ESPÍA 2 ---
-    // Se imprimirá cada vez que el contexto se actualice.
-    console.log("AuthProvider RENDERIZANDO. ¿esAdmin?:", esAdmin, "Usuario:", user);
 
     return (
         <AuthContext.Provider value={contextData}>
