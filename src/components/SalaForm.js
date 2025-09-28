@@ -28,9 +28,9 @@ function SalaForm({ onSalaCreated }) {
   };
 
   // El formulario para crear salas solo será visible para los administradores
-  //if (!esAdmin) {
-   // return null; // Si no es admin, no muestra nada.
- // }
+  if (!esAdmin) {
+    return null; // Si no es admin, no muestra nada.
+   }
 
   return (
     <Box 

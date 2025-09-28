@@ -1,32 +1,31 @@
 // frontend/src/components/MachineForm.js
 
-// ¡LA CORRECCIÓN ESTÁ EN ESTA LÍNEA!
 import React, { useState, useEffect } from 'react';
 import { Box, TextField, Button, Typography, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import axiosInstance from '../utils/axiosInstance'; // ¡Importamos axiosInstance!
+import { useAuth } from '../context/AuthContext';
 
-// Añadimos 'salaInicialId' para que se pueda pre-seleccionar una sala.
+const subtiposPorCategoria = {
+    ENTRETENIMIENTO: ['Redemption', 'Video', 'Grua', 'VR', 'Simulador', 'Kiddie', 'Otra'],
+    VENDING: ['Expendedora de Bebidas', 'Maquina de Cafe', 'Agua Caliente', 'Expendedora de Snacks', 'Otra'],
+    OTRA: [],
+};
+
 function MachineForm({ onMachineCreated, salas, salaInicialId = null }) {
+    const { esAdmin } = useAuth();
     const [nombre, setNombre] = useState('');
     const [codigo, setCodigo] = useState('');
     const [salaId, setSalaId] = useState(salaInicialId || '');
     const [categoria, setCategoria] = useState('ENTRETENIMIENTO');
     const [subtipo, setSubtipo] = useState('');
 
-    // Este useEffect asegura que si la sala seleccionada en la página cambia,
-    // el formulario se actualice.
     useEffect(() => {
         setSalaId(salaInicialId || '');
     }, [salaInicialId]);
 
-    const subtiposPorCategoria = {
-        ENTRETENIMIENTO: ['Redemption', 'Video', 'Grua', 'VR', 'Simulador', 'Kiddie', 'Otra'],
-        VENDING: ['Expendedora de Bebidas', 'Maquina de Cafe', 'Agua Caliente', 'Expendedora de Snacks', 'Otra'],
-        OTRA: [],
-    };
-
     const handleCategoriaChange = (e) => {
         setCategoria(e.target.value);
-        setSubtipo(''); // Resetea el subtipo cuando cambia la categoría
+        setSubtipo('');
     };
 
     const handleSubmit = async (e) => {
@@ -40,41 +39,22 @@ function MachineForm({ onMachineCreated, salas, salaInicialId = null }) {
             sala_id: salaId ? parseInt(salaId) : null
         };
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/v1/maquinas/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(nuevaMaquina),
-            });
-     if (!response.ok) {
-            // Si la respuesta no es exitosa (ej: error 400), leemos el error que envía Django.
-            const errorData = await response.json();
-            
-            // Construimos un mensaje de error legible para el usuario.
-            let errorMessage = 'Error al guardar la máquina.';
-            if (errorData.codigo_maquina) {
-                // Si el error es específico del código_maquina, lo mostramos.
-                errorMessage = `Error en el Código: ${errorData.codigo_maquina[0]}`;
-            }
-            // Lanzamos el error con nuestro nuevo mensaje específico.
-            throw new Error(errorMessage);
+            // --- ¡LA CORRECCIÓN ESTÁ AQUÍ! ---
+            // Usamos axiosInstance para que la petición sea autenticada y a la URL correcta.
+            await axiosInstance.post('/maquinas/', nuevaMaquina);
+            alert('¡Máquina creada con éxito!');
+            onMachineCreated();
+            setNombre(''); setCodigo(''); setSalaId(salaInicialId || ''); setCategoria('ENTRETENIMIENTO'); setSubtipo('');
+        } catch (error) {
+            console.error("Error al guardar la máquina:", error.response?.data);
+            alert(`Error al guardar: ${JSON.stringify(error.response?.data)}`);
         }
-        
-        // Si todo fue bien, continuamos como antes
-        onMachineCreated(); 
-        alert('¡Máquina guardada con éxito!');
-        setNombre(''); 
-        setCodigo(''); 
-        setSalaId(salaInicialId || ''); 
-        setCategoria('ENTRETENIMIENTO'); 
-        setSubtipo('');
-        
-    } catch (error) { 
-        console.error(error);
-        // La alerta ahora mostrará el mensaje de error específico.
-        alert(error.message);
-    }
-  };
+    };
 
+    // El formulario para crear máquinas solo debe ser visible para administradores.
+    if (!esAdmin) {
+        return null;
+    }
 
     return (
         <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: 2, border: '1px solid #ddd', borderRadius: '8px' }}>
@@ -82,7 +62,7 @@ function MachineForm({ onMachineCreated, salas, salaInicialId = null }) {
             <TextField label="Nombre de la Máquina" value={nombre} onChange={e => setNombre(e.target.value)} required size="small" />
             <TextField label="Código" value={codigo} onChange={e => setCodigo(e.target.value)} required size="small" />
             
-            <FormControl fullWidth size="small" disabled={!!salaInicialId}>
+            <FormControl fullWidth required size="small">
                 <InputLabel>Categoría</InputLabel>
                 <Select value={categoria} label="Categoría" onChange={handleCategoriaChange}>
                     <MenuItem value="ENTRETENIMIENTO">Entretenimiento</MenuItem>
@@ -91,17 +71,17 @@ function MachineForm({ onMachineCreated, salas, salaInicialId = null }) {
                 </Select>
             </FormControl>
 
-            <FormControl fullWidth size="small" disabled={!categoria || subtiposPorCategoria[categoria].length === 0}>
+            <FormControl fullWidth size="small" disabled={!categoria || subtiposPorCategoria[categoria]?.length === 0}>
                 <InputLabel>Subtipo</InputLabel>
                 <Select value={subtipo} label="Subtipo" onChange={e => setSubtipo(e.target.value)}>
                     <MenuItem value=""><em>-- Ninguno --</em></MenuItem>
-                    {categoria && subtiposPorCategoria[categoria].map(s => (
+                    {categoria && subtiposPorCategoria[categoria]?.map(s => (
                         <MenuItem key={s} value={s}>{s}</MenuItem>
                     ))}
                 </Select>
             </FormControl>
 
-            <FormControl fullWidth size="small">
+            <FormControl fullWidth size="small" disabled={!!salaInicialId}>
                 <InputLabel>Asignar a Sala</InputLabel>
                 <Select value={salaId} label="Asignar a Sala" onChange={e => setSalaId(e.target.value)}>
                     <MenuItem value=""><em>-- Sin asignar --</em></MenuItem>
